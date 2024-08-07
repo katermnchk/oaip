@@ -1,22 +1,20 @@
 #include <iostream>
 #include <iomanip>
-#include <sstream>
-#include <vector>
-#include <utility>
 #include <string>
 #include <cctype>
+#include <vector>
+#include <utility>
 #include <stdexcept>
-#include <limits>
 #include <windows.h>
 #include <cstdlib>
 
 using namespace std;
 
-struct node //элемент стека
+struct node
 {
-    double data; 
+    double data; // Изменили тип данных в стеке с char на double
     node* next;
-    node(double data) : data(data), next(nullptr) {} 
+    node(double data) : data(data), next(nullptr) {} // Изменили тип данных в конструкторе
 };
 
 class stack
@@ -59,45 +57,14 @@ public:
     }
 };
 
-static int priority(char symbol) //приоритет действий
+static int priority(char symbol)
 {
     if (symbol == '+' || symbol == '-') return 1;
     if (symbol == '*' || symbol == '/') return 2;
     return 0;
 }
 
-int answer();
-
-double readNumber()
-{
-    double number;
-    string input;
-    bool validInput = false;
-    while (!validInput)
-    {
-        cin >> input;
-        // строковый поток
-        istringstream iss(input);
-        if (iss >> number)
-        {
-            char remaining;
-            if (!(iss >> remaining))
-            {
-                validInput = true;
-            }
-        }
-        if (!validInput)
-        {
-            cout << "Ошибка! Введите число: ";
-        }
-        cin.clear();
-        cin.ignore(INT_MAX, '\n');
-    }
-
-    return number;
-}
-
-static string translate(const string& simple) //перевод в польскую запись
+static string translate(const string& simple)
 {
     stack operators;
     string polska = "";
@@ -157,18 +124,31 @@ static string translate(const string& simple) //перевод в польскую запись
             operators.push(token);
         }
     }
+
     if (!number.empty())
     {
         polska += number + " ";
     }
+
     while (!operators.empty())
     {
         polska += operators.pop();
     }
+
     return polska;
 }
 
-double evaluatePostfix(const string& polska, vector<pair<char, double>>& variables)
+int answer();
+
+double readNumber()
+{
+    double number;
+    cin >> number;
+    return number;
+}
+
+
+double evaluatePostfix(const string& polska, vector<pair<string, double>>& variables)
 {
     stack operands;
     string number = "";
@@ -177,14 +157,22 @@ double evaluatePostfix(const string& polska, vector<pair<char, double>>& variabl
         char token = polska[i];
         if (isalpha(token))
         {
-            auto it = find_if(variables.begin(), variables.end(), [&](const pair<char, double>& p) { return p.first == token; });
+            string variable = "";
+            while (isalpha(token)) {
+                variable += token;
+                ++i;
+                token = polska[i];
+            }
+            --i; // Возвращаемся на один шаг назад, чтобы проверить следующий символ
+            auto it = find_if(variables.begin(), variables.end(), [&](const pair<string, double>& p) { return p.first == variable; });
             if (it == variables.end())
             {
-                double variable;
-                cout << "Введите значение для переменной " << token << ": ";
-                variable = readNumber();
-                variables.push_back(make_pair(token, variable));
-                operands.push(variable);
+                double value;
+                cout << "Введите значение для переменной " << variable << ": ";
+                value = readNumber();
+                variables.push_back(make_pair(variable, value));
+
+                operands.push(value);
             }
             else
             {
@@ -197,7 +185,7 @@ double evaluatePostfix(const string& polska, vector<pair<char, double>>& variabl
         }
         else if (token == ' ' && !number.empty())
         {
-            double num = stof(number);
+            double num = stod(number);
             operands.push(num);
             number = "";
         }
@@ -229,7 +217,7 @@ double evaluatePostfix(const string& polska, vector<pair<char, double>>& variabl
     }
     if (!number.empty())
     {
-        double num = stof(number);
+        double num = stod(number);
         operands.push(num);
     }
     double result = operands.pop();
@@ -237,7 +225,8 @@ double evaluatePostfix(const string& polska, vector<pair<char, double>>& variabl
     return result;
 }
 
-int entry()//вход в программу
+
+int entry()
 {
     int choice;
     cout << "Лабораторная работа 4" << endl << "1 - Вход в программу" << endl;
@@ -264,12 +253,12 @@ int entry()//вход в программу
     }
 }
 
-int task()//база
+int task()
 {
     string simple;
     cout << "Введите математическое выражение с буквенными переменными (только латиница): ";
     getline(cin, simple);
-    vector<pair<char, double>> variables;
+    vector<pair<string, double>> variables;
     for (char ch : simple)
     {
         if ((ch >= 'а' && ch <= 'я') || (ch >= 'А' && ch <= 'Я'))
@@ -299,10 +288,10 @@ int main()
     return 0;
 }
 
-int answer()//спрашивает у пользователя о его дальнейших дейсвтиях
+int answer()
 {
     int choice;
-    cout << endl << "Желаете продолжить?\n1 - Да\n2 - Нет\nВаш выбор: ";
+    cout << "Желаете продолжить?\n1 - Да\n2 - Нет\nВаш выбор: ";
     do
     {
         cin >> choice;
